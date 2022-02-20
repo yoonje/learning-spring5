@@ -237,9 +237,9 @@ public class TemplateMethodTest {
   - 클라이언트가 전략을 생성해 전략을 실행한 컨텍스트에 주입하는 패턴
   - 템플릿 메서드 패턴과 비슷한 역할을 하면서 상속의 단점을 제거할 수 있는 디자인 패턴
   -  변하지 않는 부분을 `Context` 라는 곳에 두고, 변하는 부분을 `Strategy` 라는 인터페이스를 만들고 해당 인터페이스를 구현하도록 해서 문제를 해결
-  - Context 는 내부에 Strategy strategy 필드를 가지고 있어서 이 필드에 변하는 부분인 Strategy 의 구현체를 주입
+  - Context 는 내부에 `Strategy strategy` 필드를 가지고 있어서 이 필드에 변하는 부분인 Strategy 의 구현체를 주입
   - 전략 패턴의 핵심은 Context 는 Strategy 인터페이스에만 의존
-- 전략 패턴 패턴 예제 코드
+- 전략 패턴 예제 코드
 ```java
 public interface Strategy {
    void call();
@@ -294,12 +294,12 @@ public class ContextV1Test {
    @Test
    void strategyV1() {
       Strategy strategyLogic1 = new StrategyLogic1(); 
-      ContextV1 context1 = new ContextV1(strategyLogic1); 
-      
+      ContextV1 context1 = new ContextV1(strategyLogic1);
       context1.execute();
       
       Strategy strategyLogic2 = new StrategyLogic2(); 
-      ContextV1 context2 = new ContextV1(strategyLogic2); context2.execute();
+      ContextV1 context2 = new ContextV1(strategyLogic2); 
+      context2.execute();
    }
 }
 ```

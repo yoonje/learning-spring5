@@ -176,7 +176,7 @@ public class ThreadLocalLogTrace implements LogTrace {
   - 값 저장: ThreadLocal.set(value) 
   - 값 조회: ThreadLocal.get()
   - 값 제거: ThreadLocal.remove()
-- 쓰레으 로컬 주의 사항
+- 쓰레 로컬 주의 사항
   - 쓰레드를 생성하는 비용은 비싸기 때문에 쓰레드를 제거하지 않고 보통 `쓰레드 풀`을 통해서 쓰레드를 재사용하는데 쓰레드 로컬에 저장된 값을 제거하지 않으면 다른 요청에 의해 쓰레드가 재사용될 수 있고 그때 쓰레드 로컬에 저장된 값이 노출될 수 있음
   - 쓰레드 로컬을 모두 사용하고 나면 꼭 `ThreadLocal.remove()` 를 호출해서 쓰레드 로컬에 저장된 값을 제거해주어야함
   

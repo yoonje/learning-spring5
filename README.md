@@ -354,7 +354,6 @@ public class TemplateCallbackTest {
 
    @Test
    void callbackV2() {
-      
       TimeLogTemplate template = new TimeLogTemplate(); 
       template.execute(() -> log.info("비즈니스 로직1 실행")); 
       template.execute(() -> log.info("비즈니스 로직2 실행"));

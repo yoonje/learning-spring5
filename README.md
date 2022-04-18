@@ -1242,7 +1242,7 @@ public class AspectV5Order {
   > 모든 어드바이스는 `org.aspectj.lang.JoinPoint`를 첫번째 파라미터에 사용하나 @Around는 JoinPoint의 하위 타입인 ProceedingJoinPoint을 사용해야함
 - @Around
   - 메서드의 실행의 주변에서 실행
-  - 조인 포인트 실행 여부 선택 joinPoint.proceed() 
+  - 조인 포인트 실행 여부 선택: joinPoint.proceed() 
   - 호출 여부 선택 전달 값 변환: joinPoint.proceed(args[])
   - 반환 값 변환
   - 예외 변환
@@ -1322,24 +1322,31 @@ public class AspectV6Advice {
   - target: Target 객체(스프링 AOP 프록시가 가르키는 실제 대상)를 대상으로 하는 조인 포인트 
   - @target: 실행 객체의 클래스에 주어진 타입의 애노테이션이 있는 조인 포인트
   - @within: 주어진 애노테이션이 있는 타입 내 조인 포인트
-  - @annotation: 메서드가 주어진 애노테이션을 가지고 있는 조인 포인트를 매칭
+  - `@annotation`: 메서드가 주어진 애노테이션을 가지고 있는 조인 포인트를 매칭
   - @args: 전달된 실제 인수의 런타임 타입이 주어진 타입의 애노테이션을 갖는 조인 포인트 
   - bean: 스프링 전용 포인트컷 지시자, 빈의 이름으로 포인트컷을 지정
 - `execution`
-  - execution 문법: `execution(접근제어자? 반환타입 선언타입?메서드이름(파라미터) 예외?)`
+  - execution 문법: `execution(접근제어자 반환타입 선언타입/메서드이름(파라미터) 예외)`
     - 메소드 실행 조인 포인트를 매칭
-    - ?는 생략가능
-    - * 같은 패턴 지정 가능 
-    - * 은 아무 값이 들어와도 된다는 뜻
+    - 접근제어자, 선언타입, 예외는 생략 가능
+    - `*` 같은 패턴 지정 가능 
+    - `*` 은 아무 값이 들어와도 된다는 뜻
     - 파라미터에서 `..`은 파라미터의 타입과 파라미터 수가 상관없다는 뜻
-    - 패키지에서 `.`은 정확하게 해당 위치의 패키지 뜻이고 `..`은 해당 위치의 패키지와 그 하위 패키지
-  - execution 예시 => "execution(public String hello.aop.member.MemberServiceImpl.hello(String))"
-    - 접근제어자?: public
+    - 패키지에서 `.`은 정확하게 해당 위치의 패키지 뜻이고 `..`은 해당 위치의 패키지와 그 하위 패키지까지 포함
+  - execution 문법 예시1: "@Around(execution(public String hello.aop.member.MemberServiceImpl.hello(String)))"
+    - 접근제어자: public
     - 반환타입: String
-    - 선언타입?: hello.aop.member.MemberServiceImpl 
+    - 선언타입(패키지와 클래스명): hello.aop.member.MemberServiceImpl 
     - 메서드이름: hello
     - 파라미터: (String)
-    - 예외?: 생략
+    - 예외: 생략
+  - execution 문법 예시2: "@Around(execution(* *(..)))"
+    - 접근제어자: 생략
+    - 반환타입: *
+    - 선언타입(패키지와 클래스명): 생략
+    - 메서드이름: *
+    - 파라미터: (..)
+    - 예외: 생략
 - execution 타입 매칭 예시
 ```java
 // 타입 정보가 정확하게 일치
@@ -1361,7 +1368,8 @@ void typeMatchSuperType() {
 // (String)
 @Test
 void argsMatch() { 
-   pointcut.setExpression("execution(* *(String))"); assertThat(pointcut.matches(helloMethod, MemberServiceImpl.class)).isTrue(); 
+   pointcut.setExpression("execution(* *(String))"); 
+   assertThat(pointcut.matches(helloMethod, MemberServiceImpl.class)).isTrue(); 
 }
 
 // 파라미터가 없어야 함
@@ -1385,7 +1393,8 @@ void argsMatchStar() {
 // (), (Xxx), (Xxx, Xxx)
 @Test
 void argsMatchAll() { 
-   pointcut.setExpression("execution(* *(..))"); assertThat(pointcut.matches(helloMethod, MemberServiceImpl.class)).isTrue(); 
+   pointcut.setExpression("execution(* *(..))"); 
+   assertThat(pointcut.matches(helloMethod, MemberServiceImpl.class)).isTrue(); 
 }
 
 // String 타입으로 시작, 숫자와 무관하게 모든 파라미터, 모든 타입 허용 
@@ -1394,6 +1403,68 @@ void argsMatchAll() {
 void argsMatchComplex() {
    pointcut.setExpression("execution(* *(String, ..))");
    assertThat(pointcut.matches(helloMethod, MemberServiceImpl.class)).isTrue();
+}
+```
+- `execution` 예시
+```java
+@Aspect
+@Component
+public class MeasureExecutionTimeAspect {
+	
+	// repository에 있는 모든 클래스의 메서드
+	@Around("execution(* *..repository.*.*(..))")
+	public Object aroundAdvice( ProceedingJoinPoint pjp) throws Throwable {
+		// before advice
+		StopWatch sw = new StopWatch();
+		sw.start();
+		
+		Object result = pjp.proceed();
+		
+		// after advice
+		sw.stop();
+		Long total = sw.getTotalTimeMillis();
+		
+		// 어떤 클래스의 메서드인지 출력하는 정보는 pjp 객체에 있다.
+		String className = pjp.getTarget().getClass().getName();
+		String methodName = pjp.getSignature().getName();
+		String taskName = className + "." + methodName;
+		
+		System.out.println("[ExecutionTime] " + taskName + " , " + total + "(ms)");
+		
+		return result;
+	}
+}
+```
+- `@annotation`
+  - @annotation 문법: `@annotation(선언타입/메서드이름)`
+  - @annotation 문법 예시: @Around("@annotation(hello.aop.member.annotation.MethodAop)")
+  - 어노테이션의 파라미터에 값을 넣어 AOP에 전달도 가능
+- `@annotation` 예시
+```java
+@Retention(RetentionPolicy.RUNTIME)
+public @interface TargetAnno {
+   String name() default "";
+   String code() default "a1000";
+}
+````
+```java
+@Aspect
+@Component
+public class MainAOP { 
+   @Around("@annotation(org.defaultpj.sample.annotation.TargetAnno) && @ annotation(target)")
+   public Object customAnnoTest(ProceedingJoinPoint joinPoint, TargetAnno target) throws Throwable {
+      System.out.println("name : " + target.name());
+      System.out.println("code : " + target.code()  );
+      Object returnPoint = joinPoint.proceed();
+      return returnPoint;
+   }
+}
+```
+```java
+@TargetAnno(name = "심해펭귄", code = "A-1001")
+@RequestMapping(value = "/", method = RequestMethod.GET)
+public String index(Model model) {
+   return "test";
 }
 ```
 
